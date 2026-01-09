@@ -32,6 +32,9 @@ dependencies {
     // Database
     runtimeOnly("org.postgresql:postgresql")
 
+    // Database migrations (Flyway 9.x bundled with Spring Boot 3.2)
+    implementation("org.flywaydb:flyway-core")
+
     // JWT for authentication
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
