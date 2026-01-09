@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: taxfiling
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taxfiling
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
+  expiration: 3600000  # 1 hour in milliseconds
+  refresh-expiration: 604800000  # 7 days in milliseconds
+
+# OpenAPI Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.taxfiling: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
