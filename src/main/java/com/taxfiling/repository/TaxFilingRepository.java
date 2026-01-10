@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,25 +22,14 @@ public interface TaxFilingRepository extends JpaRepository<TaxFiling, UUID> {
     Page<TaxFiling> findByUserId(UUID userId, Pageable pageable);
 
     /**
-     * Find all filings for a user, ordered by tax year descending.
-     */
-    List<TaxFiling> findByUserIdOrderByTaxYearDesc(UUID userId);
-
-    /**
      * Find filings for a user by status.
      */
     Page<TaxFiling> findByUserIdAndStatus(UUID userId, FilingStatus status, Pageable pageable);
 
     /**
-     * Find filings for a user by tax year.
+     * Find filings for a user by tax year (paginated).
      */
-    List<TaxFiling> findByUserIdAndTaxYear(UUID userId, Integer taxYear);
-
-    /**
-     * Find original filing for a user/year/jurisdiction.
-     */
-    Optional<TaxFiling> findByUserIdAndTaxYearAndJurisdictionAndFilingType(
-            UUID userId, Integer taxYear, String jurisdiction, FilingType filingType);
+    Page<TaxFiling> findByUserIdAndTaxYear(UUID userId, Integer taxYear, Pageable pageable);
 
     /**
      * Check if an original filing exists for user/year/jurisdiction.
@@ -50,37 +38,19 @@ public interface TaxFilingRepository extends JpaRepository<TaxFiling, UUID> {
             UUID userId, Integer taxYear, String jurisdiction, FilingType filingType);
 
     /**
-     * Find all amendments for an original filing.
+     * Find all amendments for an original filing (paginated).
      */
-    List<TaxFiling> findByOriginalFilingIdOrderByCreatedAtDesc(UUID originalFilingId);
-
-    /**
-     * Count filings by status.
-     */
-    long countByStatus(FilingStatus status);
-
-    /**
-     * Count filings for a user.
-     */
-    long countByUserId(UUID userId);
+    Page<TaxFiling> findByOriginalFilingIdOrderByCreatedAtDesc(UUID originalFilingId, Pageable pageable);
 
     /**
      * Find filing with all related items loaded (for calculation).
      */
     @Query("SELECT f FROM TaxFiling f " +
-           "LEFT JOIN FETCH f.incomeItems " +
-           "LEFT JOIN FETCH f.deductionItems " +
-           "LEFT JOIN FETCH f.creditClaims " +
-           "WHERE f.id = :filingId")
+            "LEFT JOIN FETCH f.incomeItems " +
+            "LEFT JOIN FETCH f.deductionItems " +
+            "LEFT JOIN FETCH f.creditClaims " +
+            "WHERE f.id = :filingId")
     Optional<TaxFiling> findByIdWithItems(@Param("filingId") UUID filingId);
-
-    /**
-     * Convenience method to find original filing.
-     */
-    default Optional<TaxFiling> findOriginalFiling(UUID userId, Integer taxYear, String jurisdiction) {
-        return findByUserIdAndTaxYearAndJurisdictionAndFilingType(
-                userId, taxYear, jurisdiction, FilingType.ORIGINAL);
-    }
 
     /**
      * Check if original filing exists.

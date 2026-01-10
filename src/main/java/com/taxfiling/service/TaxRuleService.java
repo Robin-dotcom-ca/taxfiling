@@ -3,9 +3,12 @@ package com.taxfiling.service;
 import com.taxfiling.dto.taxrule.*;
 import com.taxfiling.exception.ApiException;
 import com.taxfiling.mapper.TaxRuleMapper;
-import com.taxfiling.model.*;
+import com.taxfiling.model.DeductionRule;
+import com.taxfiling.model.TaxBracket;
+import com.taxfiling.model.TaxCreditRule;
+import com.taxfiling.model.TaxRuleVersion;
 import com.taxfiling.model.enums.RuleStatus;
-import com.taxfiling.repository.*;
+import com.taxfiling.repository.TaxRuleVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,9 +27,6 @@ import java.util.UUID;
 public class TaxRuleService {
 
     private final TaxRuleVersionRepository taxRuleVersionRepository;
-    private final TaxBracketRepository taxBracketRepository;
-    private final TaxCreditRuleRepository taxCreditRuleRepository;
-    private final DeductionRuleRepository deductionRuleRepository;
     private final TaxRuleMapper taxRuleMapper;
     private final AuditService auditService;
 
@@ -106,12 +106,10 @@ public class TaxRuleService {
     }
 
     @Transactional(readOnly = true)
-    public List<TaxRuleVersionResponse> getRuleVersionsForJurisdictionYear(String jurisdiction, Integer taxYear) {
-        List<TaxRuleVersion> versions = taxRuleVersionRepository
-                .findByJurisdictionAndTaxYearOrderByVersionDesc(jurisdiction, taxYear);
-        return versions.stream()
-                .map(taxRuleMapper::toResponse)
-                .toList();
+    public Page<TaxRuleVersionResponse> getRuleVersionsForJurisdictionYear(String jurisdiction, Integer taxYear, Pageable pageable) {
+        return taxRuleVersionRepository
+                .findByJurisdictionAndTaxYearOrderByVersionDesc(jurisdiction, taxYear, pageable)
+                .map(taxRuleMapper::toResponse);
     }
 
     @Transactional(readOnly = true)

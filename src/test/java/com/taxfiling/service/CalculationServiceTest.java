@@ -19,6 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -55,8 +59,6 @@ class CalculationServiceTest {
 
     private UUID filingId;
     private UUID userId;
-    private UUID ruleVersionId;
-    private User testUser;
     private TaxFiling testFiling;
     private TaxRuleVersion testRuleVersion;
 
@@ -64,9 +66,9 @@ class CalculationServiceTest {
     void setUp() {
         filingId = UUID.randomUUID();
         userId = UUID.randomUUID();
-        ruleVersionId = UUID.randomUUID();
+        UUID ruleVersionId = UUID.randomUUID();
 
-        testUser = User.builder()
+        User testUser = User.builder()
                 .email("test@example.com")
                 .passwordHash("hashedpassword")
                 .role(UserRole.TAXPAYER)
@@ -480,6 +482,8 @@ class CalculationServiceTest {
         @Test
         @DisplayName("Should get calculation history")
         void shouldGetCalculationHistory() {
+            Pageable pageable = PageRequest.of(0, 10);
+
             CalculationRun run1 = CalculationRun.builder()
                     .filing(testFiling)
                     .ruleVersion(testRuleVersion)
@@ -512,15 +516,17 @@ class CalculationServiceTest {
                     .build();
             run2.setId(UUID.randomUUID());
 
+            Page<CalculationRun> page = new PageImpl<>(List.of(run2, run1));
+
             when(taxFilingRepository.findById(filingId))
                     .thenReturn(Optional.of(testFiling));
-            when(calculationRunRepository.findByFilingIdOrderByCreatedAtDesc(filingId))
-                    .thenReturn(List.of(run2, run1));
+            when(calculationRunRepository.findByFilingIdOrderByCreatedAtDesc(filingId, pageable))
+                    .thenReturn(page);
 
-            List<CalculationResponse> history = calculationService.getCalculationHistory(filingId, userId);
+            Page<CalculationResponse> history = calculationService.getCalculationHistory(filingId, userId, pageable);
 
-            assertThat(history).hasSize(2);
-            assertThat(history.get(0).getTotalIncome()).isEqualByComparingTo(new BigDecimal("60000"));
+            assertThat(history.getContent()).hasSize(2);
+            assertThat(history.getContent().getFirst().getTotalIncome()).isEqualByComparingTo(new BigDecimal("60000"));
         }
     }
 }

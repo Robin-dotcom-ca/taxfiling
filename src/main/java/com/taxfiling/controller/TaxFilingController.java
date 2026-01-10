@@ -17,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -77,20 +76,22 @@ public class TaxFilingController {
 
     @GetMapping("/year/{taxYear}")
     @Operation(summary = "Get filings for year", description = "Get all filings for a specific tax year")
-    public ResponseEntity<List<FilingSummaryResponse>> getFilingsForYear(
+    public ResponseEntity<Page<FilingSummaryResponse>> getFilingsForYear(
             @PathVariable Integer taxYear,
-            @CurrentUser UserPrincipal currentUser) {
-        List<FilingSummaryResponse> response = taxFilingService.getUserFilingsForYear(
-                currentUser.getId(), taxYear);
+            @CurrentUser UserPrincipal currentUser,
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
+        Page<FilingSummaryResponse> response = taxFilingService.getUserFilingsForYear(
+                currentUser.getId(), taxYear, pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/amendments")
     @Operation(summary = "Get amendments", description = "Get all amendments for an original filing")
-    public ResponseEntity<List<FilingSummaryResponse>> getAmendments(
+    public ResponseEntity<Page<FilingSummaryResponse>> getAmendments(
             @PathVariable UUID id,
-            @CurrentUser UserPrincipal currentUser) {
-        List<FilingSummaryResponse> response = taxFilingService.getAmendments(id, currentUser.getId());
+            @CurrentUser UserPrincipal currentUser,
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
+        Page<FilingSummaryResponse> response = taxFilingService.getAmendments(id, currentUser.getId(), pageable);
         return ResponseEntity.ok(response);
     }
 

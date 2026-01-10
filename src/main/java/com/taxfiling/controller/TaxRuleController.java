@@ -18,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -58,10 +57,11 @@ public class TaxRuleController {
 
     @GetMapping("/jurisdiction/{jurisdiction}/year/{taxYear}")
     @Operation(summary = "Get rule versions", description = "Get all rule versions for a jurisdiction and year")
-    public ResponseEntity<List<TaxRuleVersionResponse>> getRuleVersionsForJurisdictionYear(
+    public ResponseEntity<Page<TaxRuleVersionResponse>> getRuleVersionsForJurisdictionYear(
             @PathVariable String jurisdiction,
-            @PathVariable Integer taxYear) {
-        List<TaxRuleVersionResponse> response = taxRuleService.getRuleVersionsForJurisdictionYear(jurisdiction, taxYear);
+            @PathVariable Integer taxYear,
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
+        Page<TaxRuleVersionResponse> response = taxRuleService.getRuleVersionsForJurisdictionYear(jurisdiction, taxYear, pageable);
         return ResponseEntity.ok(response);
     }
 

@@ -20,6 +20,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -65,17 +69,15 @@ class SubmissionServiceTest {
 
     private UUID filingId;
     private UUID userId;
-    private UUID ruleVersionId;
     private User testUser;
     private TaxFiling testFiling;
-    private TaxRuleVersion testRuleVersion;
     private CalculationRun testCalculationRun;
 
     @BeforeEach
     void setUp() {
         filingId = UUID.randomUUID();
         userId = UUID.randomUUID();
-        ruleVersionId = UUID.randomUUID();
+        UUID ruleVersionId = UUID.randomUUID();
 
         testUser = User.builder()
                 .email("test@example.com")
@@ -98,7 +100,7 @@ class SubmissionServiceTest {
                 .build();
         testFiling.setId(filingId);
 
-        testRuleVersion = TaxRuleVersion.builder()
+        TaxRuleVersion testRuleVersion = TaxRuleVersion.builder()
                 .name("Federal Tax Rules 2024")
                 .jurisdiction("CA")
                 .taxYear(2024)
@@ -405,6 +407,8 @@ class SubmissionServiceTest {
         @Test
         @DisplayName("Should get all user submissions")
         void shouldGetUserSubmissions() {
+            Pageable pageable = PageRequest.of(0, 10);
+
             TaxFiling submittedFiling = TaxFiling.builder()
                     .user(testUser)
                     .taxYear(2024)
@@ -428,25 +432,29 @@ class SubmissionServiceTest {
             submissionRecord.setId(UUID.randomUUID());
             submittedFiling.setSubmissionRecord(submissionRecord);
 
-            when(taxFilingRepository.findByUserIdOrderByTaxYearDesc(userId))
-                    .thenReturn(List.of(submittedFiling, testFiling)); // testFiling is DRAFT
+            Page<SubmissionRecord> page = new PageImpl<>(List.of(submissionRecord));
 
-            List<SubmissionResponse> submissions = submissionService.getUserSubmissions(userId);
+            when(submissionRecordRepository.findBySubmittedBy(userId, pageable))
+                    .thenReturn(page);
 
-            // Should only return submitted filings
-            assertThat(submissions).hasSize(1);
-            assertThat(submissions.get(0).getConfirmationNumber()).isEqualTo("CA-20240115-2024-ABCD1234");
+            Page<SubmissionResponse> submissions = submissionService.getUserSubmissions(userId, pageable);
+
+            assertThat(submissions.getContent()).hasSize(1);
+            assertThat(submissions.getContent().getFirst().getConfirmationNumber()).isEqualTo("CA-20240115-2024-ABCD1234");
         }
 
         @Test
-        @DisplayName("Should return empty list when no submissions")
-        void shouldReturnEmptyListWhenNoSubmissions() {
-            when(taxFilingRepository.findByUserIdOrderByTaxYearDesc(userId))
-                    .thenReturn(List.of(testFiling)); // Only DRAFT filing
+        @DisplayName("Should return empty page when no submissions")
+        void shouldReturnEmptyPageWhenNoSubmissions() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<SubmissionRecord> emptyPage = new PageImpl<>(List.of());
 
-            List<SubmissionResponse> submissions = submissionService.getUserSubmissions(userId);
+            when(submissionRecordRepository.findBySubmittedBy(userId, pageable))
+                    .thenReturn(emptyPage);
 
-            assertThat(submissions).isEmpty();
+            Page<SubmissionResponse> submissions = submissionService.getUserSubmissions(userId, pageable);
+
+            assertThat(submissions.getContent()).isEmpty();
         }
     }
 }

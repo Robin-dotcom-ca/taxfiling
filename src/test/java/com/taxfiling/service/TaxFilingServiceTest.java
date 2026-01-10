@@ -271,7 +271,7 @@ class TaxFilingServiceTest {
             FilingResponse response = taxFilingService.addIncomeItem(filingId, itemDto, userId);
 
             assertThat(response.getIncomeItems()).hasSize(1);
-            assertThat(response.getIncomeItems().get(0).getAmount())
+            assertThat(response.getIncomeItems().getFirst().getAmount())
                     .isEqualByComparingTo(new BigDecimal("75000"));
 
             verify(auditService).logUpdate(eq("tax_filing"), eq(filingId), eq(userId), any(), any(), any());
@@ -302,7 +302,7 @@ class TaxFilingServiceTest {
 
             FilingResponse response = taxFilingService.updateIncomeItem(filingId, itemId, updateDto, userId);
 
-            assertThat(response.getIncomeItems().get(0).getAmount())
+            assertThat(response.getIncomeItems().getFirst().getAmount())
                     .isEqualByComparingTo(new BigDecimal("60000"));
         }
 
@@ -457,12 +457,43 @@ class TaxFilingServiceTest {
         @Test
         @DisplayName("Should get user filings for year")
         void shouldGetUserFilingsForYear() {
-            when(taxFilingRepository.findByUserIdAndTaxYear(userId, 2024))
-                    .thenReturn(List.of(testFiling));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<TaxFiling> page = new PageImpl<>(List.of(testFiling));
 
-            List<FilingSummaryResponse> result = taxFilingService.getUserFilingsForYear(userId, 2024);
+            when(taxFilingRepository.findByUserIdAndTaxYear(userId, 2024, pageable))
+                    .thenReturn(page);
 
-            assertThat(result).hasSize(1);
+            Page<FilingSummaryResponse> result = taxFilingService.getUserFilingsForYear(userId, 2024, pageable);
+
+            assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should get amendments")
+        void shouldGetAmendments() {
+            Pageable pageable = PageRequest.of(0, 10);
+            TaxFiling amendment = TaxFiling.builder()
+                    .user(testUser)
+                    .taxYear(2024)
+                    .jurisdiction("CA")
+                    .status(FilingStatus.DRAFT)
+                    .filingType(FilingType.AMENDMENT)
+                    .originalFilingId(filingId)
+                    .incomeItems(new ArrayList<>())
+                    .deductionItems(new ArrayList<>())
+                    .creditClaims(new ArrayList<>())
+                    .build();
+            amendment.setId(UUID.randomUUID());
+            Page<TaxFiling> page = new PageImpl<>(List.of(amendment));
+
+            when(taxFilingRepository.findById(filingId)).thenReturn(Optional.of(testFiling));
+            when(taxFilingRepository.findByOriginalFilingIdOrderByCreatedAtDesc(filingId, pageable))
+                    .thenReturn(page);
+
+            Page<FilingSummaryResponse> result = taxFilingService.getAmendments(filingId, userId, pageable);
+
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().getFirst().getFilingType()).isEqualTo(FilingType.AMENDMENT);
         }
     }
 }

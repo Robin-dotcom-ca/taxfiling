@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,10 +22,10 @@ public interface TaxRuleVersionRepository extends JpaRepository<TaxRuleVersion, 
             String jurisdiction, Integer taxYear, RuleStatus status);
 
     /**
-     * Find all rule versions for a jurisdiction and tax year.
+     * Find all rule versions for a jurisdiction and tax year (paginated).
      */
-    List<TaxRuleVersion> findByJurisdictionAndTaxYearOrderByVersionDesc(
-            String jurisdiction, Integer taxYear);
+    Page<TaxRuleVersion> findByJurisdictionAndTaxYearOrderByVersionDesc(
+            String jurisdiction, Integer taxYear, Pageable pageable);
 
     /**
      * Find all rule versions by status.
@@ -39,16 +38,10 @@ public interface TaxRuleVersionRepository extends JpaRepository<TaxRuleVersion, 
     Page<TaxRuleVersion> findByJurisdiction(String jurisdiction, Pageable pageable);
 
     /**
-     * Check if a rule version exists for jurisdiction/year/version.
-     */
-    boolean existsByJurisdictionAndTaxYearAndVersion(
-            String jurisdiction, Integer taxYear, Integer version);
-
-    /**
      * Get the next version number for a jurisdiction/year.
      */
     @Query("SELECT COALESCE(MAX(r.version), 0) + 1 FROM TaxRuleVersion r " +
-           "WHERE r.jurisdiction = :jurisdiction AND r.taxYear = :taxYear")
+            "WHERE r.jurisdiction = :jurisdiction AND r.taxYear = :taxYear")
     Integer getNextVersionNumber(
             @Param("jurisdiction") String jurisdiction,
             @Param("taxYear") Integer taxYear);

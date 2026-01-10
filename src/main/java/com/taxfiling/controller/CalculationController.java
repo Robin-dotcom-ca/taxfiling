@@ -1,5 +1,6 @@
 package com.taxfiling.controller;
 
+import com.taxfiling.constants.ApiConstants;
 import com.taxfiling.dto.calculation.CalculationResponse;
 import com.taxfiling.security.CurrentUser;
 import com.taxfiling.security.UserPrincipal;
@@ -7,10 +8,12 @@ import com.taxfiling.service.CalculationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -45,10 +48,11 @@ public class CalculationController {
     @GetMapping
     @Operation(summary = "Get calculation history",
                description = "Get all calculations for a filing, ordered by date descending")
-    public ResponseEntity<List<CalculationResponse>> getCalculationHistory(
+    public ResponseEntity<Page<CalculationResponse>> getCalculationHistory(
             @PathVariable UUID filingId,
-            @CurrentUser UserPrincipal currentUser) {
-        List<CalculationResponse> response = calculationService.getCalculationHistory(filingId, currentUser.getId());
+            @CurrentUser UserPrincipal currentUser,
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
+        Page<CalculationResponse> response = calculationService.getCalculationHistory(filingId, currentUser.getId(), pageable);
         return ResponseEntity.ok(response);
     }
 }

@@ -1,6 +1,8 @@
 package com.taxfiling.repository;
 
 import com.taxfiling.model.SubmissionRecord;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,40 +15,15 @@ import java.util.UUID;
 public interface SubmissionRecordRepository extends JpaRepository<SubmissionRecord, UUID> {
 
     /**
-     * Find submission record by filing ID.
-     */
-    Optional<SubmissionRecord> findByFilingId(UUID filingId);
-
-    /**
      * Find submission record by confirmation number.
      */
     Optional<SubmissionRecord> findByConfirmationNumber(String confirmationNumber);
 
     /**
-     * Check if a filing has been submitted.
-     */
-    boolean existsByFilingId(UUID filingId);
-
-    /**
-     * Check if a confirmation number exists.
-     */
-    boolean existsByConfirmationNumber(String confirmationNumber);
-
-    /**
-     * Find submission record with filing details.
+     * Find all submissions for a user (paginated).
      */
     @Query("SELECT s FROM SubmissionRecord s " +
-           "LEFT JOIN FETCH s.filing f " +
-           "LEFT JOIN FETCH s.calculationRun " +
-           "WHERE s.id = :submissionId")
-    Optional<SubmissionRecord> findByIdWithDetails(@Param("submissionId") UUID submissionId);
-
-    /**
-     * Find submission record by filing ID with details.
-     */
-    @Query("SELECT s FROM SubmissionRecord s " +
-           "LEFT JOIN FETCH s.filing f " +
-           "LEFT JOIN FETCH s.calculationRun " +
-           "WHERE s.filing.id = :filingId")
-    Optional<SubmissionRecord> findByFilingIdWithDetails(@Param("filingId") UUID filingId);
+            "WHERE s.submittedBy = :userId " +
+            "ORDER BY s.submittedAt DESC")
+    Page<SubmissionRecord> findBySubmittedBy(@Param("userId") UUID userId, Pageable pageable);
 }

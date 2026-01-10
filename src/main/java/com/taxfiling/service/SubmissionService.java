@@ -1,16 +1,19 @@
 package com.taxfiling.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taxfiling.dto.submission.SubmissionResponse;
 import com.taxfiling.dto.submission.SubmitFilingRequest;
 import com.taxfiling.exception.ApiException;
-import com.taxfiling.model.*;
+import com.taxfiling.model.CalculationRun;
+import com.taxfiling.model.SubmissionRecord;
+import com.taxfiling.model.TaxFiling;
 import com.taxfiling.model.enums.FilingStatus;
 import com.taxfiling.repository.CalculationRunRepository;
 import com.taxfiling.repository.SubmissionRecordRepository;
 import com.taxfiling.repository.TaxFilingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +33,6 @@ public class SubmissionService {
     private final SubmissionRecordRepository submissionRecordRepository;
     private final CalculationService calculationService;
     private final AuditService auditService;
-    private final ObjectMapper objectMapper;
 
     private static final String ENTITY_TYPE = "submission_record";
 
@@ -126,17 +128,9 @@ public class SubmissionService {
     }
 
     @Transactional(readOnly = true)
-    public List<SubmissionResponse> getUserSubmissions(UUID userId) {
-        List<TaxFiling> submittedFilings = taxFilingRepository
-                .findByUserIdOrderByTaxYearDesc(userId)
-                .stream()
-                .filter(f -> f.getStatus() == FilingStatus.SUBMITTED)
-                .toList();
-
-        return submittedFilings.stream()
-                .filter(f -> f.getSubmissionRecord() != null)
-                .map(f -> buildResponse(f.getSubmissionRecord(), f, f.getSubmissionRecord().getCalculationRun()))
-                .toList();
+    public Page<SubmissionResponse> getUserSubmissions(UUID userId, Pageable pageable) {
+        return submissionRecordRepository.findBySubmittedBy(userId, pageable)
+                .map(submission -> buildResponse(submission, submission.getFiling(), submission.getCalculationRun()));
     }
 
     private void validateSubmission(TaxFiling filing, UUID userId) {
@@ -175,7 +169,6 @@ public class SubmissionService {
         return String.format("%s-%s-%d-%s", jurisdictionCode, datePrefix, filing.getTaxYear(), randomSuffix);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> createFilingSnapshot(TaxFiling filing, CalculationRun calculation) {
         Map<String, Object> snapshot = new HashMap<>();
 

@@ -11,6 +11,8 @@ import com.taxfiling.repository.TaxFilingRepository;
 import com.taxfiling.repository.TaxRuleVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,16 +138,14 @@ public class CalculationService {
     }
 
     @Transactional(readOnly = true)
-    public List<CalculationResponse> getCalculationHistory(UUID filingId, UUID userId) {
+    public Page<CalculationResponse> getCalculationHistory(UUID filingId, UUID userId, Pageable pageable) {
         TaxFiling filing = taxFilingRepository.findById(filingId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "FILING_NOT_FOUND", "Filing not found"));
 
         validateFilingAccess(filing, userId);
 
-        List<CalculationRun> runs = calculationRunRepository.findByFilingIdOrderByCreatedAtDesc(filingId);
-        return runs.stream()
-                .map(this::buildResponseFromRun)
-                .toList();
+        return calculationRunRepository.findByFilingIdOrderByCreatedAtDesc(filingId, pageable)
+                .map(this::buildResponseFromRun);
     }
 
     private BigDecimal calculateTotalIncome(TaxFiling filing, List<String> trace) {
@@ -198,10 +198,9 @@ public class CalculationService {
     }
 
     private BigDecimal calculateProgressiveTax(BigDecimal taxableIncome, List<TaxBracket> brackets,
-                                                List<BracketBreakdown> breakdown, List<String> trace) {
+                                               List<BracketBreakdown> breakdown, List<String> trace) {
         BigDecimal remainingIncome = taxableIncome;
         BigDecimal totalTax = BigDecimal.ZERO;
-        BigDecimal marginalRate = BigDecimal.ZERO;
 
         trace.add("Calculating progressive tax through brackets:");
 
@@ -223,13 +222,9 @@ public class CalculationService {
             if (bracketMax == null) {
                 // Top bracket - no limit
                 incomeInBracket = remainingIncome;
-                marginalRate = rate;
             } else {
                 BigDecimal bracketRange = bracketMax.subtract(bracketMin);
                 incomeInBracket = remainingIncome.min(bracketRange);
-                if (remainingIncome.compareTo(bracketRange) >= 0) {
-                    marginalRate = rate; // Will be overwritten by next bracket if applicable
-                }
             }
 
             BigDecimal taxFromBracket = incomeInBracket.multiply(rate).setScale(SCALE, ROUNDING);
@@ -258,7 +253,7 @@ public class CalculationService {
     }
 
     private BigDecimal calculateCredits(TaxFiling filing, TaxRuleVersion ruleVersion, BigDecimal grossTax,
-                                         List<CreditBreakdown> breakdown, List<String> trace) {
+                                        List<CreditBreakdown> breakdown, List<String> trace) {
         BigDecimal nonRefundableCredits = BigDecimal.ZERO;
         BigDecimal refundableCredits = BigDecimal.ZERO;
 
@@ -375,7 +370,7 @@ public class CalculationService {
     }
 
     private CalculationResponse buildResponse(CalculationRun run, List<BracketBreakdown> brackets,
-                                               List<CreditBreakdown> credits, List<String> trace) {
+                                              List<CreditBreakdown> credits, List<String> trace) {
         BigDecimal effectiveRate = BigDecimal.ZERO;
         if (run.getTotalIncome().compareTo(BigDecimal.ZERO) > 0) {
             effectiveRate = run.getGrossTax()
@@ -386,7 +381,7 @@ public class CalculationService {
 
         BigDecimal marginalRate = BigDecimal.ZERO;
         if (!brackets.isEmpty()) {
-            BracketBreakdown lastBracket = brackets.get(brackets.size() - 1);
+            BracketBreakdown lastBracket = brackets.getLast();
             if (lastBracket.getTaxableInBracket().compareTo(BigDecimal.ZERO) > 0) {
                 marginalRate = lastBracket.getRate()
                         .multiply(BigDecimal.valueOf(100))
@@ -417,7 +412,6 @@ public class CalculationService {
                 .build();
     }
 
-    @SuppressWarnings("unchecked")
     private CalculationResponse buildResponseFromRun(CalculationRun run) {
         List<BracketBreakdown> brackets = run.getBracketBreakdown().stream()
                 .map(m -> objectMapper.convertValue(m, BracketBreakdown.class))
@@ -443,7 +437,7 @@ public class CalculationService {
 
         BigDecimal marginalRate = BigDecimal.ZERO;
         if (!brackets.isEmpty()) {
-            BracketBreakdown lastBracket = brackets.get(brackets.size() - 1);
+            BracketBreakdown lastBracket = brackets.getLast();
             if (lastBracket.getTaxableInBracket().compareTo(BigDecimal.ZERO) > 0) {
                 marginalRate = lastBracket.getRate()
                         .multiply(BigDecimal.valueOf(100))

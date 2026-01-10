@@ -409,12 +409,15 @@ class TaxRuleServiceTest {
         @Test
         @DisplayName("Should get rule versions for jurisdiction and year")
         void shouldGetRuleVersionsForJurisdictionYear() {
-            when(taxRuleVersionRepository.findByJurisdictionAndTaxYearOrderByVersionDesc("CA", 2024))
-                    .thenReturn(List.of(testRuleVersion));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<TaxRuleVersion> page = new PageImpl<>(List.of(testRuleVersion));
 
-            List<TaxRuleVersionResponse> result = taxRuleService.getRuleVersionsForJurisdictionYear("CA", 2024);
+            when(taxRuleVersionRepository.findByJurisdictionAndTaxYearOrderByVersionDesc("CA", 2024, pageable))
+                    .thenReturn(page);
 
-            assertThat(result).hasSize(1);
+            Page<TaxRuleVersionResponse> result = taxRuleService.getRuleVersionsForJurisdictionYear("CA", 2024, pageable);
+
+            assertThat(result.getContent()).hasSize(1);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.taxfiling.controller;
 
+import com.taxfiling.constants.ApiConstants;
 import com.taxfiling.dto.submission.SubmissionResponse;
 import com.taxfiling.dto.submission.SubmitFilingRequest;
 import com.taxfiling.security.CurrentUser;
@@ -9,11 +10,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -55,9 +58,10 @@ public class SubmissionController {
     @GetMapping("/submissions")
     @Operation(summary = "Get my submissions",
                description = "Get all submissions for the current user")
-    public ResponseEntity<List<SubmissionResponse>> getMySubmissions(
-            @CurrentUser UserPrincipal currentUser) {
-        List<SubmissionResponse> response = submissionService.getUserSubmissions(currentUser.getId());
+    public ResponseEntity<Page<SubmissionResponse>> getMySubmissions(
+            @CurrentUser UserPrincipal currentUser,
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
+        Page<SubmissionResponse> response = submissionService.getUserSubmissions(currentUser.getId(), pageable);
         return ResponseEntity.ok(response);
     }
 

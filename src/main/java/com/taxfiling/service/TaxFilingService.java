@@ -26,9 +26,6 @@ public class TaxFilingService {
 
     private final TaxFilingRepository taxFilingRepository;
     private final UserRepository userRepository;
-    private final IncomeItemRepository incomeItemRepository;
-    private final DeductionItemRepository deductionItemRepository;
-    private final CreditClaimRepository creditClaimRepository;
     private final TaxFilingMapper taxFilingMapper;
     private final AuditService auditService;
 
@@ -162,20 +159,18 @@ public class TaxFilingService {
     }
 
     @Transactional(readOnly = true)
-    public List<FilingSummaryResponse> getUserFilingsForYear(UUID userId, Integer taxYear) {
-        return taxFilingRepository.findByUserIdAndTaxYear(userId, taxYear).stream()
-                .map(taxFilingMapper::toSummaryResponse)
-                .toList();
+    public Page<FilingSummaryResponse> getUserFilingsForYear(UUID userId, Integer taxYear, Pageable pageable) {
+        return taxFilingRepository.findByUserIdAndTaxYear(userId, taxYear, pageable)
+                .map(taxFilingMapper::toSummaryResponse);
     }
 
     @Transactional(readOnly = true)
-    public List<FilingSummaryResponse> getAmendments(UUID originalFilingId, UUID userId) {
+    public Page<FilingSummaryResponse> getAmendments(UUID originalFilingId, UUID userId, Pageable pageable) {
         TaxFiling original = findFilingById(originalFilingId);
         validateFilingOwnership(original, userId);
 
-        return taxFilingRepository.findByOriginalFilingIdOrderByCreatedAtDesc(originalFilingId).stream()
-                .map(taxFilingMapper::toSummaryResponse)
-                .toList();
+        return taxFilingRepository.findByOriginalFilingIdOrderByCreatedAtDesc(originalFilingId, pageable)
+                .map(taxFilingMapper::toSummaryResponse);
     }
 
     // Income Item operations
