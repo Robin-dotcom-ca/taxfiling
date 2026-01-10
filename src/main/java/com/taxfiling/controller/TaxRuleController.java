@@ -1,5 +1,6 @@
 package com.taxfiling.controller;
 
+import com.taxfiling.constants.ApiConstants;
 import com.taxfiling.dto.taxrule.*;
 import com.taxfiling.model.enums.RuleStatus;
 import com.taxfiling.security.CurrentUser;
@@ -68,7 +69,7 @@ public class TaxRuleController {
     @Operation(summary = "Get rules by status", description = "Get all rule versions with a specific status")
     public ResponseEntity<Page<TaxRuleVersionResponse>> getRuleVersionsByStatus(
             @PathVariable RuleStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<TaxRuleVersionResponse> response = taxRuleService.getRuleVersionsByStatus(status, pageable);
         return ResponseEntity.ok(response);
     }
@@ -77,7 +78,7 @@ public class TaxRuleController {
     @Operation(summary = "Get rules by jurisdiction", description = "Get all rule versions for a jurisdiction")
     public ResponseEntity<Page<TaxRuleVersionResponse>> getRuleVersionsByJurisdiction(
             @PathVariable String jurisdiction,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<TaxRuleVersionResponse> response = taxRuleService.getRuleVersionsByJurisdiction(jurisdiction, pageable);
         return ResponseEntity.ok(response);
     }

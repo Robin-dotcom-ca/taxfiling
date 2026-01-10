@@ -1,5 +1,6 @@
 package com.taxfiling.controller;
 
+import com.taxfiling.constants.ApiConstants;
 import com.taxfiling.dto.filing.*;
 import com.taxfiling.model.enums.FilingStatus;
 import com.taxfiling.security.CurrentUser;
@@ -58,7 +59,7 @@ public class TaxFilingController {
     @Operation(summary = "Get my filings", description = "Get all filings for the current user")
     public ResponseEntity<Page<FilingSummaryResponse>> getMyFilings(
             @CurrentUser UserPrincipal currentUser,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<FilingSummaryResponse> response = taxFilingService.getUserFilings(currentUser.getId(), pageable);
         return ResponseEntity.ok(response);
     }
@@ -68,7 +69,7 @@ public class TaxFilingController {
     public ResponseEntity<Page<FilingSummaryResponse>> getFilingsByStatus(
             @PathVariable FilingStatus status,
             @CurrentUser UserPrincipal currentUser,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<FilingSummaryResponse> response = taxFilingService.getUserFilingsByStatus(
                 currentUser.getId(), status, pageable);
         return ResponseEntity.ok(response);

@@ -1,5 +1,6 @@
 package com.taxfiling.controller;
 
+import com.taxfiling.constants.ApiConstants;
 import com.taxfiling.model.AuditTrail;
 import com.taxfiling.service.AuditService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,7 +40,7 @@ public class AuditController {
                description = "Get audit history for actions performed by a specific user")
     public ResponseEntity<Page<AuditTrail>> getActorAuditHistory(
             @PathVariable UUID actorId,
-            @PageableDefault(size = 50) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<AuditTrail> history = auditService.getActorAuditHistory(actorId, pageable);
         return ResponseEntity.ok(history);
     }
@@ -49,7 +50,7 @@ public class AuditController {
                description = "Get audit history for all entities of a specific type")
     public ResponseEntity<Page<AuditTrail>> getEntityTypeAuditHistory(
             @PathVariable String entityType,
-            @PageableDefault(size = 50) Pageable pageable) {
+            @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE) Pageable pageable) {
         Page<AuditTrail> history = auditService.getEntityTypeAuditHistory(entityType, pageable);
         return ResponseEntity.ok(history);
     }
