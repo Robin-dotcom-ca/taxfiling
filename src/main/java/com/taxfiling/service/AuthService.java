@@ -118,10 +118,7 @@ public class AuthService {
                 .expiresIn(tokenProvider.getExpirationInSeconds())
                 .user(AuthResponse.UserInfo.builder()
                         .id(user.getId())
-                        .email(user.getEmail())
                         .role(user.getRole())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
                         .build())
                 .build();
     }

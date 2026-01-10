@@ -100,7 +100,6 @@ class AuthServiceTest {
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isEqualTo("access-token");
             assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
-            assertThat(response.getUser().getEmail()).isEqualTo("newuser@example.com");
             assertThat(response.getUser().getRole()).isEqualTo(UserRole.TAXPAYER);
 
             // Verify user was saved with correct data
@@ -180,7 +179,6 @@ class AuthServiceTest {
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isEqualTo("access-token");
             assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
-            assertThat(response.getUser().getEmail()).isEqualTo("test@example.com");
         }
 
         @Test

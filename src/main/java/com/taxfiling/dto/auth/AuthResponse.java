@@ -26,9 +26,6 @@ public class AuthResponse {
     @AllArgsConstructor
     public static class UserInfo {
         private UUID id;
-        private String email;
         private UserRole role;
-        private String firstName;
-        private String lastName;
     }
 }
