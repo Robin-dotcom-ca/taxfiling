@@ -13,6 +13,7 @@ A Spring Boot backend service for a simplified tax filing platform. This service
 - **Tax Rule Versioning**: Admin-managed tax rules with version control (DRAFT → ACTIVE → DEPRECATED)
 - **Audit Trail**: Complete history of all changes to filings and rules
 - **Pagination**: All list endpoints support pagination
+- **Observability**: Structured JSON logging, Prometheus metrics, request tracing, health checks
 
 ## Tech Stack
 
@@ -23,6 +24,7 @@ A Spring Boot backend service for a simplified tax filing platform. This service
 - **Migrations**: Flyway
 - **Security**: Spring Security with JWT (jjwt 0.12.3)
 - **Documentation**: SpringDoc OpenAPI 2.3.0 (Swagger UI)
+- **Observability**: Micrometer + Prometheus, Logback with JSON encoder, Spring AOP
 - **Build**: Gradle 8.5 (Kotlin DSL)
 - **Testing**: JUnit 5, Mockito, AssertJ
 
@@ -467,6 +469,11 @@ src/main/java/com/taxfiling/
 ├── exception/                      # Custom exceptions
 │   ├── ApiException.java           # Standard API exception
 │   └── GlobalExceptionHandler.java # @ControllerAdvice handler
+├── observability/                  # Observability components
+│   ├── CorrelationIdFilter.java    # Request tracing with MDC
+│   ├── LoggingAspect.java          # AOP method logging
+│   ├── MetricsService.java         # Custom business metrics
+│   └── TaxFilingHealthIndicator.java # Custom health check
 └── security/                       # Security components
     ├── JwtTokenProvider.java       # JWT generation/validation
     ├── JwtAuthenticationFilter.java # Request filter
@@ -476,6 +483,7 @@ src/main/java/com/taxfiling/
 src/main/resources/
 ├── application.yml                 # Main configuration
 ├── application-test.yml            # Test profile (H2 database)
+├── logback-spring.xml              # Structured logging configuration
 └── db/migration/                   # Flyway migrations
     └── V1__initial_schema.sql
 ```
@@ -598,12 +606,90 @@ curl "http://localhost:8080/api/v1/filings?page=0&size=10&sort=createdAt,desc" \
   -H "Authorization: Bearer <access_token>"
 ```
 
-## Health Check
+## Observability
+
+The application includes comprehensive observability features for production monitoring and debugging.
+
+### Health Endpoints
 
 ```bash
+# Basic health status
 curl http://localhost:8080/actuator/health
-# Returns: {"status":"UP"}
+
+# Kubernetes probes
+curl http://localhost:8080/actuator/health/liveness
+curl http://localhost:8080/actuator/health/readiness
 ```
+
+### Metrics & Prometheus
+
+```bash
+# List all metrics
+curl http://localhost:8080/actuator/metrics
+
+# Prometheus format (for Grafana)
+curl http://localhost:8080/actuator/prometheus
+```
+
+**Custom Business Metrics:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `taxfiling.filings.created` | Counter | Total filings created |
+| `taxfiling.filings.submitted` | Counter | Total filings submitted |
+| `taxfiling.calculations.performed` | Counter | Total tax calculations |
+| `taxfiling.calculation.duration` | Timer | Calculation time (p50, p95, p99) |
+| `taxfiling.auth.success/failure` | Counter | Authentication attempts |
+
+### Structured JSON Logging
+
+Logs are output in JSON format (ELK/Splunk compatible):
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:45.123Z",
+  "level": "INFO",
+  "correlationId": "abc123def456",
+  "userId": "user-uuid",
+  "requestPath": "/api/v1/filings",
+  "message": "Filing created successfully"
+}
+```
+
+### Request Tracing
+
+Every request gets a correlation ID for distributed tracing:
+
+```bash
+# Pass your own correlation ID
+curl -H "X-Correlation-ID: my-trace-123" http://localhost:8080/api/v1/filings
+
+# Response includes X-Correlation-ID header
+# All logs include correlationId field
+```
+
+### Runtime Log Level Control
+
+```bash
+# View log levels
+curl http://localhost:8080/actuator/loggers
+
+# Change at runtime
+curl -X POST http://localhost:8080/actuator/loggers/com.taxfiling \
+  -H "Content-Type: application/json" \
+  -d '{"configuredLevel": "DEBUG"}'
+```
+
+### Actuator Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/actuator/health` | Health status |
+| `/actuator/health/liveness` | K8s liveness probe |
+| `/actuator/health/readiness` | K8s readiness probe |
+| `/actuator/metrics` | Application metrics |
+| `/actuator/prometheus` | Prometheus metrics |
+| `/actuator/loggers` | Log level management |
 
 ## License
 

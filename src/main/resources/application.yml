@@ -48,21 +48,43 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# Actuator endpoints
+# Actuator endpoints for observability
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus,loggers,env
+      base-path: /actuator
   endpoint:
     health:
       show-details: when_authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+    loggers:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
 
-# Logging
+# Logging - configured via logback-spring.xml for structured logging
 logging:
   level:
     root: INFO
     com.taxfiling: DEBUG
     org.springframework.security: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

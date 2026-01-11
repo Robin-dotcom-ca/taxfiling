@@ -52,4 +52,11 @@ public interface TaxRuleVersionRepository extends JpaRepository<TaxRuleVersion, 
     default Optional<TaxRuleVersion> findActiveRule(String jurisdiction, Integer taxYear) {
         return findByJurisdictionAndTaxYearAndStatus(jurisdiction, taxYear, RuleStatus.ACTIVE);
     }
+
+    /**
+     * Count all active rule versions across all jurisdictions.
+     * Used by health indicator to verify system readiness.
+     */
+    @Query("SELECT COUNT(r) FROM TaxRuleVersion r WHERE r.status = 'ACTIVE'")
+    long countActiveRules();
 }

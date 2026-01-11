@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Properties from Spring Environment -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="taxfiling"/>
+    <springProperty scope="context" name="APP_ENV" source="spring.profiles.active" defaultValue="default"/>
+
+    <!-- Console appender for development (human-readable) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{correlationId:-}] [%X{userId:-}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- JSON appender for production (structured logging) -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>requestMethod</includeMdcKeyName>
+            <includeMdcKeyName>requestPath</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
+
+            <customFields>{"service":"${APP_NAME}","environment":"${APP_ENV}"}</customFields>
+
+            <!-- Include caller info for debugging -->
+            <includeCallerData>false</includeCallerData>
+
+            <!-- Shorten field names for efficiency -->
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <version>[ignore]</version>
+                <levelValue>[ignore]</levelValue>
+            </fieldNames>
+
+            <!-- Stack trace formatting -->
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+                <shortenedClassNameLength>20</shortenedClassNameLength>
+                <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <!-- File appender for persistent logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/taxfiling.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/taxfiling.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <customFields>{"service":"${APP_NAME}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Async wrapper for better performance -->
+    <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="JSON"/>
+    </appender>
+
+    <!-- Development profile - human readable console output -->
+    <springProfile name="default,dev,sample-data">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.taxfiling" level="DEBUG"/>
+        <logger name="org.springframework.security" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+    </springProfile>
+
+    <!-- Test profile - minimal logging -->
+    <springProfile name="test">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.taxfiling" level="INFO"/>
+    </springProfile>
+
+    <!-- Production profile - JSON structured logging -->
+    <springProfile name="prod,production">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_JSON"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.taxfiling" level="INFO"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+    </springProfile>
+</configuration>

@@ -28,6 +28,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
+    // Observability - Structured Logging
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+
+    // Observability - Metrics (Prometheus format)
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
