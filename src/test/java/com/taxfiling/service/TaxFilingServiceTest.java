@@ -46,15 +46,6 @@ class TaxFilingServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private IncomeItemRepository incomeItemRepository;
-
-    @Mock
-    private DeductionItemRepository deductionItemRepository;
-
-    @Mock
-    private CreditClaimRepository creditClaimRepository;
-
-    @Mock
     private AuditService auditService;
 
     @Spy

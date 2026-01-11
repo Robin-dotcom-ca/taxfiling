@@ -42,15 +42,6 @@ class TaxRuleServiceTest {
     private TaxRuleVersionRepository taxRuleVersionRepository;
 
     @Mock
-    private TaxBracketRepository taxBracketRepository;
-
-    @Mock
-    private TaxCreditRuleRepository taxCreditRuleRepository;
-
-    @Mock
-    private DeductionRuleRepository deductionRuleRepository;
-
-    @Mock
     private AuditService auditService;
 
     @Spy
