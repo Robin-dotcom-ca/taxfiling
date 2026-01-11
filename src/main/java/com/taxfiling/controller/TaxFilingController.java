@@ -104,6 +104,25 @@ public class TaxFilingController {
         return ResponseEntity.noContent().build();
     }
 
+    // Status transition endpoints
+    @PostMapping("/{id}/ready")
+    @Operation(summary = "Mark as ready", description = "Mark a DRAFT filing as READY for submission")
+    public ResponseEntity<FilingResponse> markAsReady(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal currentUser) {
+        FilingResponse response = taxFilingService.markAsReady(id, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/unready")
+    @Operation(summary = "Unmark as ready", description = "Move a READY filing back to DRAFT")
+    public ResponseEntity<FilingResponse> unmarkAsReady(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal currentUser) {
+        FilingResponse response = taxFilingService.unmarkAsReady(id, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
     // Income Item endpoints
 
     @PostMapping("/{id}/income-items")

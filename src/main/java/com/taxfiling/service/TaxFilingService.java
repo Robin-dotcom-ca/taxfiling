@@ -6,7 +6,8 @@ import com.taxfiling.mapper.TaxFilingMapper;
 import com.taxfiling.model.*;
 import com.taxfiling.model.enums.FilingStatus;
 import com.taxfiling.model.enums.FilingType;
-import com.taxfiling.repository.*;
+import com.taxfiling.repository.TaxFilingRepository;
+import com.taxfiling.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -375,6 +376,81 @@ public class TaxFilingService {
         ));
 
         log.info("Deleted filing {} by user {}", filingId, userId);
+    }
+
+    /**
+     * Marks a DRAFT filing as READY for submission.
+     * Validates that the filing has at least one income item.
+     */
+    @Transactional
+    public FilingResponse markAsReady(UUID filingId, UUID userId) {
+        log.info("Marking filing {} as ready by user {}", filingId, userId);
+
+        TaxFiling filing = taxFilingRepository.findByIdWithItems(filingId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "FILING_NOT_FOUND", "Filing not found"));
+        validateFilingOwnership(filing, userId);
+
+        if (filing.getStatus() != FilingStatus.DRAFT) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_STATUS",
+                    "Only DRAFT filings can be marked as ready"
+            );
+        }
+
+        // Validate filing completeness
+        validateFilingCompleteness(filing);
+
+        filing.setStatus(FilingStatus.READY);
+        TaxFiling saved = taxFilingRepository.save(filing);
+
+        auditService.logStatusChange(ENTITY_TYPE, filingId, userId,
+                Map.of("status", FilingStatus.DRAFT.name()),
+                Map.of("status", FilingStatus.READY.name()));
+
+        log.info("Filing {} marked as ready", filingId);
+
+        return taxFilingMapper.toResponse(saved);
+    }
+
+    /**
+     * Moves a READY filing back to DRAFT for further editing.
+     */
+    @Transactional
+    public FilingResponse unmarkAsReady(UUID filingId, UUID userId) {
+        log.info("Unmarking filing {} as ready by user {}", filingId, userId);
+
+        TaxFiling filing = findFilingById(filingId);
+        validateFilingOwnership(filing, userId);
+
+        if (filing.getStatus() != FilingStatus.READY) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_STATUS",
+                    "Only READY filings can be moved back to draft"
+            );
+        }
+
+        filing.setStatus(FilingStatus.DRAFT);
+        TaxFiling saved = taxFilingRepository.save(filing);
+
+        auditService.logStatusChange(ENTITY_TYPE, filingId, userId,
+                Map.of("status", FilingStatus.READY.name()),
+                Map.of("status", FilingStatus.DRAFT.name()));
+
+        log.info("Filing {} moved back to draft", filingId);
+
+        return taxFilingMapper.toResponse(saved);
+    }
+
+    private void validateFilingCompleteness(TaxFiling filing) {
+        if (filing.getIncomeItems().isEmpty()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INCOMPLETE_FILING",
+                    "Filing must have at least one income item to be marked as ready"
+            );
+        }
     }
 
     private TaxFiling findFilingById(UUID filingId) {

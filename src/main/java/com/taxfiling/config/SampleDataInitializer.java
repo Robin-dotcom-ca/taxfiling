@@ -25,12 +25,12 @@ import java.util.UUID;
  * - TaxFilingService: Various statuses, amendments, income/deduction types
  * - CalculationService: Different bracket scenarios, refund/owing cases
  * - SubmissionService: Submitted filings with confirmation numbers
- *
+ * <p>
  * Usage:
- *   ./gradlew bootRun --args='--spring.profiles.active=sample-data'
- *
+ * ./gradlew bootRun --args='--spring.profiles.active=sample-data'
+ * <p>
  * Or with Docker:
- *   SPRING_PROFILES_ACTIVE=sample-data docker-compose up
+ * SPRING_PROFILES_ACTIVE=sample-data docker-compose up
  */
 @Slf4j
 @Configuration
@@ -107,6 +107,9 @@ public class SampleDataInitializer {
 
             // Scenario: Self-employment income
             TaxFiling bobSelfEmployed2023 = createSelfEmployedFiling(bob);
+
+            // Scenario: READY status - filing complete, ready to submit
+            TaxFiling bobReady2024 = createReadyToSubmitFiling(bob, caRules2024Active);
 
             // --- Alice Chen's filings ---
             // Scenario: Investment-heavy income
@@ -450,6 +453,41 @@ public class SampleDataInitializer {
 
         taxFilingRepository.save(filing);
         log.info("Created SELF-EMPLOYED filing for {}", user.getEmail());
+        return filing;
+    }
+
+    /**
+     * READY status filing - complete and ready to submit.
+     * Tests: READY status (editable, can calculate, can submit).
+     * Per DATA_MODEL_DESIGN.md: DRAFT → READY → SUBMITTED
+     */
+    private TaxFiling createReadyToSubmitFiling(User user, TaxRuleVersion ruleVersion) {
+        TaxFiling filing = createFiling(user, 2024, "CA", FilingStatus.READY);
+
+        // Complete filing with all required data
+        addIncomeItem(filing, IncomeType.EMPLOYMENT, "Stable Corp",
+                new BigDecimal("82000"), new BigDecimal("18000"),
+                Map.of("t4Box14", "82000.00", "t4Box22", "18000.00", "employerName", "Stable Corp"));
+
+        addIncomeItem(filing, IncomeType.INVESTMENT, "Bank Interest",
+                new BigDecimal("1200"), BigDecimal.ZERO,
+                Map.of("t5Box13", "1200.00", "institution", "TD Bank"));
+
+        // Standard deductions
+        addDeductionItem(filing, DeductionType.RRSP, "RRSP Contribution",
+                new BigDecimal("12000"), Map.of("institution", "RBC Direct Investing"));
+
+        // All applicable credits claimed
+        addCreditClaim(filing, "BASIC_PERSONAL", new BigDecimal("15705"), Map.of());
+        addCreditClaim(filing, "CANADA_EMPLOYMENT", new BigDecimal("1368"), Map.of());
+        addCreditClaim(filing, "GST_HST_CREDIT", new BigDecimal("496"), Map.of());
+
+        filing = taxFilingRepository.save(filing);
+
+        // READY filings typically have a calculation run already
+        createCalculationRun(filing, ruleVersion);
+
+        log.info("Created READY filing for {} - ready to submit", user.getEmail());
         return filing;
     }
 
@@ -809,6 +847,7 @@ public class SampleDataInitializer {
         log.info("    - 2024 CA SUBMITTED                   - With confirmation number");
         log.info("  Bob Wilson:");
         log.info("    - 2024 CA Low Income ($25k) DRAFT     - First bracket, credit capping");
+        log.info("    - 2024 CA READY                       - Complete, ready to submit");
         log.info("    - 2023 CA Self-Employed DRAFT         - No withholding");
         log.info("  Alice Chen:");
         log.info("    - 2024 CA Investment-Heavy DRAFT      - Multiple income types");
@@ -816,7 +855,7 @@ public class SampleDataInitializer {
         log.info("");
         log.info("SCENARIOS COVERED:");
         log.info("  TaxRuleService:    Multiple versions, DRAFT/ACTIVE/DEPRECATED, CA/US");
-        log.info("  TaxFilingService:  DRAFT/SUBMITTED, amendments, all income/deduction types");
+        log.info("  TaxFilingService:  DRAFT/READY/SUBMITTED, amendments, all income/deduction types");
         log.info("  CalculationService: All brackets, credit capping, refund/owing scenarios");
         log.info("  SubmissionService:  Confirmation numbers, filing snapshots");
         log.info("");

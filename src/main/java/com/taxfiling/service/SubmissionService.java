@@ -143,6 +143,15 @@ public class SubmissionService {
                     "Filing has already been submitted"
             );
         }
+
+        // Only READY filings can be submitted (per DATA_MODEL_DESIGN.md state machine)
+        if (filing.getStatus() != FilingStatus.READY) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "NOT_READY",
+                    "Filing must be marked as READY before submission. Current status: " + filing.getStatus()
+            );
+        }
     }
 
     private void validateFilingComplete(TaxFiling filing) {

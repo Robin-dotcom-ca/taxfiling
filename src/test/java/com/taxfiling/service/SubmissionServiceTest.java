@@ -92,7 +92,7 @@ class SubmissionServiceTest {
                 .user(testUser)
                 .taxYear(2024)
                 .jurisdiction("CA")
-                .status(FilingStatus.DRAFT)
+                .status(FilingStatus.READY)  // READY status for submission tests
                 .filingType(FilingType.ORIGINAL)
                 .incomeItems(new ArrayList<>())
                 .deductionItems(new ArrayList<>())
@@ -237,6 +237,20 @@ class SubmissionServiceTest {
             assertThatThrownBy(() -> submissionService.submitFiling(filingId, userId, null))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("already been submitted");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when filing is DRAFT (not READY)")
+        void shouldThrowWhenFilingIsDraft() {
+            testFiling.setStatus(FilingStatus.DRAFT);
+
+            when(taxFilingRepository.findByIdWithItems(filingId))
+                    .thenReturn(Optional.of(testFiling));
+
+            assertThatThrownBy(() -> submissionService.submitFiling(filingId, userId, null))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("must be marked as READY")
+                    .hasMessageContaining("DRAFT");
         }
 
         @Test

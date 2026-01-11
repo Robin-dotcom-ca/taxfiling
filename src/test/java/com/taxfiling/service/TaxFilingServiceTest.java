@@ -3,7 +3,9 @@ package com.taxfiling.service;
 import com.taxfiling.dto.filing.*;
 import com.taxfiling.exception.ApiException;
 import com.taxfiling.mapper.TaxFilingMapper;
-import com.taxfiling.model.*;
+import com.taxfiling.model.IncomeItem;
+import com.taxfiling.model.TaxFiling;
+import com.taxfiling.model.User;
 import com.taxfiling.model.enums.*;
 import com.taxfiling.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,13 +23,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TaxFilingService Tests")
@@ -420,6 +426,121 @@ class TaxFilingServiceTest {
             assertThatThrownBy(() -> taxFilingService.deleteFiling(filingId, userId))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("Cannot delete a submitted filing");
+        }
+    }
+
+    @Nested
+    @DisplayName("Status Transitions")
+    class StatusTransitionTests {
+
+        @Test
+        @DisplayName("Should mark DRAFT filing as READY")
+        void shouldMarkDraftAsReady() {
+            // Add income item to make filing complete
+            IncomeItem incomeItem = IncomeItem.builder()
+                    .incomeType(IncomeType.EMPLOYMENT)
+                    .amount(new BigDecimal("50000"))
+                    .taxWithheld(new BigDecimal("10000"))
+                    .build();
+            testFiling.addIncomeItem(incomeItem);
+
+            when(taxFilingRepository.findByIdWithItems(filingId))
+                    .thenReturn(Optional.of(testFiling));
+            when(taxFilingRepository.save(any(TaxFiling.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            FilingResponse response = taxFilingService.markAsReady(filingId, userId);
+
+            assertThat(response.getStatus()).isEqualTo(FilingStatus.READY);
+            verify(auditService).logStatusChange(eq("tax_filing"), eq(filingId), eq(userId), any(), any());
+        }
+
+        @Test
+        @DisplayName("Should throw when marking empty filing as READY")
+        void shouldThrowWhenMarkingEmptyFilingAsReady() {
+            when(taxFilingRepository.findByIdWithItems(filingId))
+                    .thenReturn(Optional.of(testFiling));
+
+            assertThatThrownBy(() -> taxFilingService.markAsReady(filingId, userId))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("at least one income item");
+        }
+
+        @Test
+        @DisplayName("Should throw when marking non-DRAFT filing as READY")
+        void shouldThrowWhenMarkingNonDraftAsReady() {
+            testFiling.setStatus(FilingStatus.SUBMITTED);
+
+            when(taxFilingRepository.findByIdWithItems(filingId))
+                    .thenReturn(Optional.of(testFiling));
+
+            assertThatThrownBy(() -> taxFilingService.markAsReady(filingId, userId))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Only DRAFT filings");
+        }
+
+        @Test
+        @DisplayName("Should move READY filing back to DRAFT")
+        void shouldUnmarkReadyToDraft() {
+            testFiling.setStatus(FilingStatus.READY);
+
+            when(taxFilingRepository.findById(filingId))
+                    .thenReturn(Optional.of(testFiling));
+            when(taxFilingRepository.save(any(TaxFiling.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            FilingResponse response = taxFilingService.unmarkAsReady(filingId, userId);
+
+            assertThat(response.getStatus()).isEqualTo(FilingStatus.DRAFT);
+            verify(auditService).logStatusChange(eq("tax_filing"), eq(filingId), eq(userId), any(), any());
+        }
+
+        @Test
+        @DisplayName("Should throw when unmarking non-READY filing")
+        void shouldThrowWhenUnmarkingNonReadyFiling() {
+            // testFiling is DRAFT by default
+            when(taxFilingRepository.findById(filingId))
+                    .thenReturn(Optional.of(testFiling));
+
+            assertThatThrownBy(() -> taxFilingService.unmarkAsReady(filingId, userId))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Only READY filings");
+        }
+
+        @Test
+        @DisplayName("Should allow editing READY filing")
+        void shouldAllowEditingReadyFiling() {
+            testFiling.setStatus(FilingStatus.READY);
+
+            IncomeItemDto itemDto = IncomeItemDto.builder()
+                    .incomeType(IncomeType.EMPLOYMENT)
+                    .source("New Employer")
+                    .amount(new BigDecimal("80000"))
+                    .taxWithheld(new BigDecimal("16000"))
+                    .build();
+
+            when(taxFilingRepository.findByIdWithItems(filingId))
+                    .thenReturn(Optional.of(testFiling));
+            when(taxFilingRepository.save(any(TaxFiling.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            FilingResponse response = taxFilingService.addIncomeItem(filingId, itemDto, userId);
+
+            assertThat(response.getIncomeItems()).hasSize(1);
+            assertThat(response.getStatus()).isEqualTo(FilingStatus.READY);
+        }
+
+        @Test
+        @DisplayName("Should allow deleting READY filing")
+        void shouldAllowDeletingReadyFiling() {
+            testFiling.setStatus(FilingStatus.READY);
+
+            when(taxFilingRepository.findById(filingId))
+                    .thenReturn(Optional.of(testFiling));
+
+            taxFilingService.deleteFiling(filingId, userId);
+
+            verify(taxFilingRepository).delete(testFiling);
         }
     }
 
