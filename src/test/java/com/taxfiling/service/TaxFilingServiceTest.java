@@ -23,10 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -79,9 +76,9 @@ class TaxFilingServiceTest {
                 .jurisdiction("CA")
                 .status(FilingStatus.DRAFT)
                 .filingType(FilingType.ORIGINAL)
-                .incomeItems(new ArrayList<>())
-                .deductionItems(new ArrayList<>())
-                .creditClaims(new ArrayList<>())
+                .incomeItems(new HashSet<>())
+                .deductionItems(new HashSet<>())
+                .creditClaims(new HashSet<>())
                 .build();
         testFiling.setId(filingId);
     }
@@ -591,9 +588,9 @@ class TaxFilingServiceTest {
                     .status(FilingStatus.DRAFT)
                     .filingType(FilingType.AMENDMENT)
                     .originalFilingId(filingId)
-                    .incomeItems(new ArrayList<>())
-                    .deductionItems(new ArrayList<>())
-                    .creditClaims(new ArrayList<>())
+                    .incomeItems(new HashSet<>())
+                    .deductionItems(new HashSet<>())
+                    .creditClaims(new HashSet<>())
                     .build();
             amendment.setId(UUID.randomUUID());
             Page<TaxFiling> page = new PageImpl<>(List.of(amendment));

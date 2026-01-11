@@ -7,10 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "tax_filings",
@@ -56,15 +53,15 @@ public class TaxFiling extends BaseEntity {
 
     @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<IncomeItem> incomeItems = new ArrayList<>();
+    private Set<IncomeItem> incomeItems = new HashSet<>();
 
     @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<DeductionItem> deductionItems = new ArrayList<>();
+    private Set<DeductionItem> deductionItems = new HashSet<>();
 
     @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<CreditClaim> creditClaims = new ArrayList<>();
+    private Set<CreditClaim> creditClaims = new HashSet<>();
 
     @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL)
     @OrderBy("createdAt DESC")

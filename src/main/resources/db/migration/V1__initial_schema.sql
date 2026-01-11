@@ -251,7 +251,9 @@ CREATE TABLE audit_trail (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     entity_type     VARCHAR(50) NOT NULL,
     entity_id       UUID NOT NULL,
-    action          VARCHAR(20) NOT NULL CHECK (action IN ('CREATE', 'UPDATE', 'DELETE')),
+    action          VARCHAR(20) NOT NULL
+        CONSTRAINT audit_trail_action_check
+        CHECK (action IN ('CREATE', 'UPDATE', 'DELETE')),
     actor_id        UUID REFERENCES users(id),
     old_values      JSONB,
     new_values      JSONB,

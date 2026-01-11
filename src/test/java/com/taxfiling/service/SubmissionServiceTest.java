@@ -94,9 +94,9 @@ class SubmissionServiceTest {
                 .jurisdiction("CA")
                 .status(FilingStatus.READY)  // READY status for submission tests
                 .filingType(FilingType.ORIGINAL)
-                .incomeItems(new ArrayList<>())
-                .deductionItems(new ArrayList<>())
-                .creditClaims(new ArrayList<>())
+                .incomeItems(new HashSet<>())
+                .deductionItems(new HashSet<>())
+                .creditClaims(new HashSet<>())
                 .build();
         testFiling.setId(filingId);
 
@@ -429,9 +429,9 @@ class SubmissionServiceTest {
                     .jurisdiction("CA")
                     .status(FilingStatus.SUBMITTED)
                     .filingType(FilingType.ORIGINAL)
-                    .incomeItems(new ArrayList<>())
-                    .deductionItems(new ArrayList<>())
-                    .creditClaims(new ArrayList<>())
+                    .incomeItems(new HashSet<>())
+                    .deductionItems(new HashSet<>())
+                    .creditClaims(new HashSet<>())
                     .build();
             submittedFiling.setId(UUID.randomUUID());
 

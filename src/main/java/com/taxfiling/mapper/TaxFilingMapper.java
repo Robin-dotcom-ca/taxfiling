@@ -5,6 +5,7 @@ import com.taxfiling.model.*;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,7 +68,7 @@ public class TaxFilingMapper {
                 .build();
     }
 
-    public List<IncomeItemDto> toIncomeItemDtoList(List<IncomeItem> items) {
+    public List<IncomeItemDto> toIncomeItemDtoList(Collection<IncomeItem> items) {
         if (items == null) {
             return List.of();
         }
@@ -97,7 +98,7 @@ public class TaxFilingMapper {
                 .build();
     }
 
-    public List<DeductionItemDto> toDeductionItemDtoList(List<DeductionItem> items) {
+    public List<DeductionItemDto> toDeductionItemDtoList(Collection<DeductionItem> items) {
         if (items == null) {
             return List.of();
         }
@@ -125,7 +126,7 @@ public class TaxFilingMapper {
                 .build();
     }
 
-    public List<CreditClaimDto> toCreditClaimDtoList(List<CreditClaim> claims) {
+    public List<CreditClaimDto> toCreditClaimDtoList(Collection<CreditClaim> claims) {
         if (claims == null) {
             return List.of();
         }

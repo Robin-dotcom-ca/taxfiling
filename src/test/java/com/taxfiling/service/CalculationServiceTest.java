@@ -83,9 +83,9 @@ class CalculationServiceTest {
                 .jurisdiction("CA")
                 .status(FilingStatus.DRAFT)
                 .filingType(FilingType.ORIGINAL)
-                .incomeItems(new ArrayList<>())
-                .deductionItems(new ArrayList<>())
-                .creditClaims(new ArrayList<>())
+                .incomeItems(new HashSet<>())
+                .deductionItems(new HashSet<>())
+                .creditClaims(new HashSet<>())
                 .build();
         testFiling.setId(filingId);
 
