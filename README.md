@@ -288,6 +288,21 @@ Once running, access the Swagger UI at:
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON**: http://localhost:8080/api-docs
 
+### Postman Collection
+
+A complete Postman collection is available in the `postman/` folder with all API endpoints pre-configured:
+
+```
+postman/
+└── Tax_Filing_API.postman_collection.json
+```
+
+**Import into Postman:**
+1. Open Postman
+2. Click **Import** → **Upload Files**
+3. Select the collection JSON file
+4. Set environment variable `baseUrl` to `http://localhost:8080`
+
 ### Authentication Endpoints
 
 | Method | Endpoint | Description | Auth |
