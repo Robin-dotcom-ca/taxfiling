@@ -1,0 +1,30 @@
+# Sample Data Profile Configuration
+# Extends the default configuration and enables sample data initialization
+#
+# Usage:
+#   ./gradlew bootRun --args='--spring.profiles.active=sample-data'
+#
+# With Docker:
+#   SPRING_PROFILES_ACTIVE=sample-data docker-compose up
+
+spring:
+  # Use default datasource settings (can be overridden)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:taxfiling}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    # Show SQL for debugging during development
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.taxfiling: DEBUG
+    com.taxfiling.config.SampleDataInitializer: INFO
+    org.hibernate.SQL: DEBUG
+    # Uncomment to see parameter bindings
+    # org.hibernate.type.descriptor.sql.BasicBinder: TRACE

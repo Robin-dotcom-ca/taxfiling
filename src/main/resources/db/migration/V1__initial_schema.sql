@@ -125,9 +125,9 @@ CREATE TABLE tax_filings (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX idx_filings_unique_original
-    ON tax_filings(user_id, tax_year, jurisdiction)
-    WHERE filing_type = 'ORIGINAL';
+-- CREATE UNIQUE INDEX idx_filings_unique_original
+--     ON tax_filings(user_id, tax_year, jurisdiction)
+--     WHERE filing_type = 'ORIGINAL';
 
 CREATE INDEX idx_filings_user ON tax_filings(user_id);
 CREATE INDEX idx_filings_status ON tax_filings(status);
