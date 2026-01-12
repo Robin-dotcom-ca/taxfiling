@@ -310,7 +310,6 @@ postman/
 | POST | `/api/v1/auth/register` | Register new user | No |
 | POST | `/api/v1/auth/login` | Login and get tokens | No |
 | POST | `/api/v1/auth/refresh` | Refresh access token | No |
-| GET | `/api/v1/auth/me` | Get current user info | Yes |
 
 ### Tax Filing Endpoints
 
